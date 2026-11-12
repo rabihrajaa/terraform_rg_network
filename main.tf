@@ -11,24 +11,24 @@ resource "azurerm_virtual_network" "main" {
 }
 
 locals {
-  alpha_adress_space = cidrsubnet(var.base_adress_space, 2, 0)
-  rajaa_adress_space = cidrsubnet(var.base_adress_space, 2, 1)
-  bravo_adress_space = cidrsubnet(var.base_adress_space, 2, 2)
-  delta_adress_space = cidrsubnet(var.base_adress_space, 2, 3)
+  bastion_adress_space = cidrsubnet(var.base_adress_space, 4, 0) //from /22 to /26 
+  rajaa_adress_space   = cidrsubnet(var.base_adress_space, 2, 1)
+  bravo_adress_space   = cidrsubnet(var.base_adress_space, 2, 2)
+  delta_adress_space   = cidrsubnet(var.base_adress_space, 2, 3)
 }
+
 
 //10.39.0.0/24
-
-resource "azurerm_subnet" "bravo" {
-  name                 = "snet-bravo"
+//Start: 10.39.0.0
+//End: 10.39.0.63 --> 64 adress
+resource "azurerm_subnet" "bastion" {
+  name                 = "AzureBastionSubnet"
   resource_group_name  = azurerm_resource_group.main.name
   virtual_network_name = azurerm_virtual_network.main.name
-  address_prefixes     = [local.bravo_adress_space]
+  address_prefixes     = [local.bastion_adress_space]
 }
 
-
 //10.39.1.0/24
-
 resource "azurerm_subnet" "rajaa" {
   name                 = "snet-rajaa"
   resource_group_name  = azurerm_resource_group.main.name
@@ -37,16 +37,14 @@ resource "azurerm_subnet" "rajaa" {
 }
 
 //10.39.2.0/24
-
-resource "azurerm_subnet" "alpha" {
-  name                 = "snet-alpha"
+resource "azurerm_subnet" "bravo" {
+  name                 = "snet-bravo"
   resource_group_name  = azurerm_resource_group.main.name
   virtual_network_name = azurerm_virtual_network.main.name
-  address_prefixes     = [local.alpha_adress_space]
+  address_prefixes     = [local.bravo_adress_space]
 }
 
 //10.39.3.0/24
-
 resource "azurerm_subnet" "delta" {
   name                 = "snet-delta"
   resource_group_name  = azurerm_resource_group.main.name
@@ -73,10 +71,10 @@ resource "azurerm_network_security_group" "remote_access" {
 
 }
 
-resource "azurerm_subnet_network_security_group_association" "alpha_remote_access" {
-  subnet_id                 = azurerm_subnet.alpha.id
-  network_security_group_id = azurerm_network_security_group.remote_access.id
-}
+# resource "azurerm_subnet_network_security_group_association" "alpha_remote_access" {
+#   subnet_id                 = azurerm_subnet.alpha.id
+#   network_security_group_id = azurerm_network_security_group.remote_access.id
+# }
 
 data "http" "my_ip" {
   url = "https://ifconfig.me/ip"
